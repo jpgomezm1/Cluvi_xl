@@ -55,6 +55,8 @@ fig2.update_layout(xaxis_tickangle=-45, title_text='Comisiones por transacción 
 external_stylesheets = ['https://stackpath.bootstrapcdn.com/bootswatch/4.5.2/yeti/bootstrap.min.css']
 app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
 
+
+
 dropdown = dcc.Dropdown(
     id='dropdown',
     options=[{'label': i, 'value': i} for i in df['Sucursal'].unique()],
