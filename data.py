@@ -5,6 +5,8 @@ import dash
 from dash.dependencies import Input, Output, State
 import dash_core_components as dcc
 import dash_html_components as html
+from dash_table.Format import Format, Scheme, Sign, Symbol, Group
+from dash_table import DataTable, FormatTemplate
 
 # Carga el archivo excel en un dataframe omitiendo la primera fila
 df = pd.read_excel('informe_xlgourmet.xlsx', skiprows=1)
@@ -25,6 +27,21 @@ df['Porcentaje Otras pasarelas de pago'] = df['Comision Otras pasarelas de pago'
 
 # Remueve las columnas que sobran
 df = df.drop(columns=['Tasa Variable', 'Tasa Fija', 'Total Comision'])
+
+# Función de formato para las columnas de moneda
+def format_currency(value):
+    return f"${value:,.3f}"
+
+# Función de formato para las columnas de porcentaje
+def format_percentage(value):
+    return f"{value:.2f}%"
+
+# Aplica las funciones de formato a las columnas correspondientes
+for col in ['Monto', 'Comision Cluvipay', 'Comision Otras pasarelas de pago', 'Diferencia']:
+    df[col] = df[col].apply(format_currency)
+
+for col in ['Porcentaje Cluvipay', 'Porcentaje Otras pasarelas de pago']:
+    df[col] = df[col].apply(format_percentage)
 
 # Crea una tabla interactiva con Dash
 table = dash_table.DataTable(
@@ -63,7 +80,7 @@ dropdown = dcc.Dropdown(
     placeholder="Selecciona una Sucursal"
 )
 
-summary = html.Div(id='summary')
+
 
 app.layout = html.Div(children=[
     html.Div(
@@ -83,7 +100,6 @@ app.layout = html.Div(children=[
 
     dropdown,
     table,
-    summary,
 
     html.H2(children='Gráficos', style={'textAlign': 'center', 'padding': '10px'}),
 
@@ -122,14 +138,7 @@ def update_table(selected_dropdown_value):
     else:
         return df.to_dict('records')
 
-@app.callback(
-    Output('summary', 'children'),
-    [Input('table', 'data')]
-)
-def update_summary(data):
-    df_current = pd.DataFrame(data)
-    total_ahorro = df_current['Diferencia'].sum()
-    return f'El ahorro total utilizando Cluvipay en lugar de otras pasarelas de pago fue: {total_ahorro:,.2f} COP'
+
 
 @app.callback(
     Output('simulador-output', 'children'),
@@ -146,3 +155,6 @@ def calculate_commission(n_clicks, monto):
 
 if __name__ == '__main__':
     app.run_server(debug=True)
+
+
+
