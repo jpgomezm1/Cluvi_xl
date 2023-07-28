@@ -56,7 +56,6 @@ external_stylesheets = ['https://stackpath.bootstrapcdn.com/bootswatch/4.5.2/yet
 app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
 server = app.server
 
-
 dropdown = dcc.Dropdown(
     id='dropdown',
     options=[{'label': i, 'value': i} for i in df['Sucursal'].unique()],
@@ -106,36 +105,11 @@ app.layout = html.Div(children=[
             type='number',
             value=""
         ),
-        html.Button('Calcular', id='calcular-button', n_clicks=0, style={'background-color': '#6B30BA', 'border': 'none', 'color': 'white', 'padding': '15px 32px', 'text-align': 'center', 'text-decoration': 'none', 'display': 'inline-block', 'font-size': '16px', 'margin': '4px 2px', 'cursor': 'pointer', 'borderRadius': '10px'}),
-        html.Div(id='output-comisiones'),
-    ], style={'textAlign': 'center', 'marginBottom': '20px'}),
-], style={'font-family': 'Arial, Helvetica, sans-serif'})
+        html.Button('Calcular', id='calcular-button', n_clicks=0, style={'background-color': '#6B30BA', 'border': 'none', 'color': 'white', 'padding': '15px 32px', 'text-align': 'center', 'text-decoration': 'none', 'display': 'inline-block', 'font-size': '16px', 'margin': '4px 2px', 'cursor': 'pointer'}),
+    ], style={'textAlign': 'center'}),
 
-@app.callback(
-    Output('output-comisiones', 'children'),
-    [Input('calcular-button', 'n_clicks')],
-    [State('input-monto', 'value')]
-)
-def calcular_comisiones(n_clicks, monto):
-    if monto:
-        comision_cluvipay = monto * 0.0399 + 500
-        comision_otras_pasarelas = monto * 0.0315 + monto * 0.0020 + monto * 0.0050 + monto * 0.0150 + 700
-        ahorro = comision_otras_pasarelas - comision_cluvipay
-
-        data = [
-            {"Pasarela": "Cluvipay", "Comision": f'{comision_cluvipay:.2f} COP'},
-            {"Pasarela": "Otras pasarelas de pago", "Comision": f'{comision_otras_pasarelas:.2f} COP'},
-            {"Pasarela": "Ahorro", "Comision": f'{ahorro:.2f} COP'}
-        ]
-
-        return dash_table.DataTable(
-            id='table-comisiones',
-            columns=[{"name": i, "id": i} for i in data[0].keys()],
-            data=data,
-            style_cell={'textAlign': 'left'},
-        )
-    else:
-        return 'Por favor, introduce un monto válido.'
+    html.Div(id='simulador-output', style={'textAlign': 'center', 'padding': '20px', 'fontSize': '20px'}),
+])
 
 @app.callback(
     Output('table', 'data'),
@@ -144,12 +118,8 @@ def calcular_comisiones(n_clicks, monto):
 def update_table(selected_dropdown_value):
     if selected_dropdown_value:
         filtered_df = df[df['Sucursal'].isin(selected_dropdown_value)].copy()
-        for column in ['Comision Cluvipay', 'Comision Otras pasarelas de pago', 'Diferencia']:
-            filtered_df[column] = filtered_df[column].apply(lambda x: f'{x:,.2f} COP')
         return filtered_df.to_dict('records')
     else:
-        for column in ['Comision Cluvipay', 'Comision Otras pasarelas de pago', 'Diferencia']:
-            df[column] = df[column].apply(lambda x: f'{x:,.2f} COP')
         return df.to_dict('records')
 
 @app.callback(
@@ -158,10 +128,21 @@ def update_table(selected_dropdown_value):
 )
 def update_summary(data):
     df_current = pd.DataFrame(data)
-    df_current['Diferencia'] = df_current['Diferencia'].replace({'COP': '', ',': ''}, regex=True).astype(float)
     total_ahorro = df_current['Diferencia'].sum()
     return f'El ahorro total utilizando Cluvipay en lugar de otras pasarelas de pago fue: {total_ahorro:,.2f} COP'
 
+@app.callback(
+    Output('simulador-output', 'children'),
+    [Input('calcular-button', 'n_clicks')],
+    [State('input-monto', 'value')]
+)
+def calculate_commission(n_clicks, monto):
+    if monto:
+        monto = float(monto)
+        comision_cluvipay = monto * 0.0399 + 500
+        comision_otras_pasarelas = monto * 0.0315 + monto * 0.0020 + monto * 0.0050 + monto * 0.0150 + 700
+        ahorro = comision_otras_pasarelas - comision_cluvipay
+        return f'Comisión Cluvipay: {comision_cluvipay:,.2f} COP, Comisión otras pasarelas de pago: {comision_otras_pasarelas:,.2f} COP, Ahorro: {ahorro:,.2f} COP'
+
 if __name__ == '__main__':
     app.run_server(debug=True)
-
