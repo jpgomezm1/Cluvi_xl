@@ -54,7 +54,7 @@ fig2.update_layout(xaxis_tickangle=-45, title_text='Comisiones por transacción 
 # Crea una aplicación web con Dash
 external_stylesheets = ['https://stackpath.bootstrapcdn.com/bootswatch/4.5.2/yeti/bootstrap.min.css']
 app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
-
+server = app.server
 
 
 dropdown = dcc.Dropdown(
